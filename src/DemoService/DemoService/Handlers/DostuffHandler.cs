@@ -25,10 +25,10 @@ namespace DemoService.Handlers
                      * For legacy reasons, we want to handle the transaction ourselves.
                      */
                     var transactionOptions = new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted };
-                    using (var transaction = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
+                    using (var transaction = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                     {
                         /*
-                         * Since the above TransactionScope uses TransactionScopeOption.RequiresNew, we're in a new TransactionScope and @@trancount is 1 99.99% of the time
+                         * Since the above TransactionScope uses TransactionScopeOption.Required, we're in a new TransactionScope and @@trancount is 1 99.99% of the time
                          * Some times @@trancount is 0 and even more seldom it is 2.
                          */
                         var transactionDetails = GetTransactionDetails();
