@@ -36,4 +36,4 @@ We have not been able to reproduce without the transactional WCF call. In this e
 
 We have trimmed the example to the smallest amount of code possibly, only leaving logging and some database cruds for demo purposes. We have also disabled NServiceBus transaction handling, only leaving our own TransactionScope.
 
-Can you please take a look at the code, and see if you can see anything else we might have missed? All the important bits are in the `DemoService\Handlers\DostuffHandler.cs` and `DemoService\Infrastructure\EndpointConfig.cs` files.
+All the important bits are in the `DemoService\Handlers\DostuffHandler.cs` and `DemoService\Infrastructure\EndpointConfig.cs` files.
