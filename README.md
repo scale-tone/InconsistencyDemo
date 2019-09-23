@@ -23,7 +23,13 @@ Run the `Runme.ps1` in the root of the repository. This will
 2.	Nuget restore and build the applications
 3.	Start all 3 applications
 
-Once all three applications are running, you can start the processing by sending 100 messages to the `DemoService` input queue by pressing `enter` in the `MessageCreator` console window.
+Once all three applications are running, you can start the processing by sending 100 messages to the `DemoService` input queue by pressing `enter` in the `MessageCreator` console window. Now verify that the DemoService is processing messages. It only takes a few minutes for inconsistencies to appear on my developer machine. When the `Trancount` property is 0 we cannot roll back crud operations.
+
+![Console applications running](https://raw.githubusercontent.com/samegutt/InconsistencyDemo/master/doc/Inconsistency.console.png)
+
+Verify using SQL:
+
+![Transaction is not rolled back](https://raw.githubusercontent.com/samegutt/InconsistencyDemo/master/doc/Inconsistency.ssms.png)
 
 
 We have not been able to reproduce without the transactional WCF call. In this example we also instruct NServiceBus to NOT to create a transaction. 
