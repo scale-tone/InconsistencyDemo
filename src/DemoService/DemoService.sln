@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29215.179
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoService", "DemoService\DemoService.csproj", "{AE178AA2-46D7-4112-A8FD-273DC738F6F3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoService", "DemoService\DemoService.csproj", "{AE178AA2-46D7-4112-A8FD-273DC738F6F3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WcfService", "WcfService\WcfService.csproj", "{2C882413-D214-4846-B65A-C572950D4625}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WcfService", "WcfService\WcfService.csproj", "{2C882413-D214-4846-B65A-C572950D4625}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MessageCreator", "MessageCreator\MessageCreator.csproj", "{0D8FAD33-0D71-4F33-829A-C9836B358FC4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MessageCreator", "MessageCreator\MessageCreator.csproj", "{0D8FAD33-0D71-4F33-829A-C9836B358FC4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Database", "Database", "{09AF0F2D-BDE8-4370-A953-917701465BC2}"
 	ProjectSection(SolutionItems) = preProject
@@ -27,6 +27,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{8DE7
 		Scripts\03 - Run.ps1 = Scripts\03 - Run.ps1
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoopHammer", "LoopHammer\LoopHammer.csproj", "{DCDD4924-2FA3-4889-A601-C6C6AE0B0F6E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{0D8FAD33-0D71-4F33-829A-C9836B358FC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0D8FAD33-0D71-4F33-829A-C9836B358FC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0D8FAD33-0D71-4F33-829A-C9836B358FC4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DCDD4924-2FA3-4889-A601-C6C6AE0B0F6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DCDD4924-2FA3-4889-A601-C6C6AE0B0F6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DCDD4924-2FA3-4889-A601-C6C6AE0B0F6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DCDD4924-2FA3-4889-A601-C6C6AE0B0F6E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

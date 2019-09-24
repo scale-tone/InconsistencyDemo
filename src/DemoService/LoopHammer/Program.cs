@@ -1,18 +1,76 @@
-﻿using DemoService.Commands;
+﻿using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
+using System.Transactions;
+using DemoService.Handlers;
+using DemoService.Handlers.DemoService.Commands;
 using DemoService.WcfAgents;
-using NServiceBus;
 using Serilog;
 using Serilog.Context;
-using System;
-using System.Data.SqlClient;
-using System.Transactions;
+using Serilog.Enrichers;
+using Serilog.Formatting.Json;
+using Serilog.Sinks.RollingFile;
+
+namespace LoopHammer
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Parallel.For(0, 100000, i =>
+            {
+                DemoService.Handlers.LogConfig.ConfigureLogging();
+                var pelle = new DostuffHandler();
+                Console.WriteLine(i);
+
+                pelle.Handle(new DoStuff(){Message =  Guid.NewGuid().ToString()});
+
+            });
+        }
+    }
+}
+
 
 namespace DemoService.Handlers
 {
-    public class DostuffHandler: IHandleMessages<DoStuff>
+    public class LogConfig
+    {
+        public static void ConfigureLogging()
+        {
+            const int retainedFileCountLimit = 31;
+
+            var logDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            var applicationName = Assembly.GetExecutingAssembly().GetName().Name;
+            var logFileNameFormat = $"{applicationName}-{{Date}}.log";
+            var pathFormat = Path.Combine(logDirectory, logFileNameFormat);
+
+            Log.Logger = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .Enrich.With<ThreadIdEnricher>()
+                .Enrich.WithProperty("ApplicationName", applicationName)
+                .WriteTo.ColoredConsole()
+                .WriteTo.Sink(new RollingFileSink(pathFormat, new JsonFormatter(renderMessage: true), null, retainedFileCountLimit, Encoding.UTF8))
+                .CreateLogger();
+        }
+    }
+
+    namespace DemoService.Commands
+    {
+        public class DoStuff
+        {
+            public string Message { get; set; }
+        }
+    }
+
+
+    public class DostuffHandler 
     {
         private string correlationId;
-        public IBus Bus { get; set; }
 
         public void Handle(DoStuff message)
         {
@@ -34,7 +92,7 @@ namespace DemoService.Handlers
                         var transactionDetails = GetTransactionDetails();
                         Serilog.Log.Information("{CorrelationId:l} @@trancount is {TransactionCount} using new TransactionScope(RequiresNew)", correlationId, transactionDetails);
 
-                        if(transactionDetails.TranCount != 1)
+                        if (transactionDetails.TranCount != 1)
                         {
                             Serilog.Log.Error("{CorrelationId:l} @@trancount is {TransactionCount}, WE'RE ABOUT TO CREATE INCONSISTENT DATA", correlationId, transactionDetails);
                         }
@@ -80,7 +138,7 @@ namespace DemoService.Handlers
                 }
             }
         }
-        
+
         private TransactionDetails GetTransactionDetails()
         {
             var transactionDetails = new TransactionDetails();
