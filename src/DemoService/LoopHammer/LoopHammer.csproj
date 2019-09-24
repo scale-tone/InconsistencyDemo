@@ -4,10 +4,16 @@
     <TargetFramework>net471</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DemoService\DemoService.csproj" />
+    <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Configuration" />
-    <Reference Include="System.Messaging" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Transactions" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="App.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>

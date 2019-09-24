@@ -1,86 +1,80 @@
-﻿using DemoService.Commands;
-using DemoService.WcfAgents;
-using NServiceBus;
-using Serilog;
-using Serilog.Context;
-using System;
+﻿using System;
 using System.Data.SqlClient;
+using System.Threading.Tasks;
 using System.Transactions;
+using DemoService.WcfAgents;
 
-namespace DemoService.Handlers
+namespace LoopHammer
 {
-    public class DostuffHandler: IHandleMessages<DoStuff>
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            var loopCount = 1000000;
+
+            Parallel.For(0, loopCount, i =>
+            {
+                new DostuffHandler().Handle();
+            });
+        }
+    }
+
+    public class DostuffHandler 
     {
         private string correlationId;
-        public IBus Bus { get; set; }
 
-        public void Handle(DoStuff message)
+        public void Handle()
         {
-            correlationId = message.Message;
-            using (LogContext.PushProperty("TransactionInformation", Transaction.Current?.TransactionInformation, true))
+            correlationId = Guid.NewGuid().ToString();
+            try
             {
-                try
+                /*
+                 * For legacy reasons, we want to handle the transaction ourselves.
+                 */
+                var transactionOptions = new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted };
+                using (var transaction = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                 {
                     /*
-                     * For legacy reasons, we want to handle the transaction ourselves.
+                     * Since the above TransactionScope uses TransactionScopeOption.Required, we're in a new TransactionScope and @@trancount is 1 99.99% of the time
+                     * Some times @@trancount is 0 and even more seldom it is 2.
                      */
-                    var transactionOptions = new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted };
-                    using (var transaction = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
+                    var transactionDetails = GetTransactionDetails();
+
+                    if (transactionDetails.TranCount != 1)
                     {
-                        /*
-                         * Since the above TransactionScope uses TransactionScopeOption.Required, we're in a new TransactionScope and @@trancount is 1 99.99% of the time
-                         * Some times @@trancount is 0 and even more seldom it is 2.
-                         */
-                        var transactionDetails = GetTransactionDetails();
-                        Serilog.Log.Information("{CorrelationId:l} @@trancount is {TransactionCount} using new TransactionScope(RequiresNew)", correlationId, transactionDetails);
-
-                        if(transactionDetails.TranCount != 1)
-                        {
-                            Serilog.Log.Error("{CorrelationId:l} @@trancount is {TransactionCount}, WE'RE ABOUT TO CREATE INCONSISTENT DATA", correlationId, transactionDetails);
-                        }
-
-                        /*
-                         * This writes to two different tables.
-                         * - TestTable2 is written within the current transaction. When @@trancount is 0, the insert is NOT rolled back when the TransactionScope is rolled back.
-                         * - TestTable3 is written to, Suppressing the transaction. This is basically just a log.
-                         */
-                        WriteLogToDatabase(GetTransactionDetails());
-                        WriteImportantBusinessDataToDatabase($"This should not be committed ever, since the WCF call below always fails.", GetTransactionDetails());
-
-                        /*
-                         * This WCF call is transactional. The initial local transaction is promoted to a distributed transaction.
-                         * It always throws exception, and in 99.9% of the messages handled, the insert in the method above is rolled back.
-                         * But in some cases, the stuff is not rolled back. We can tell when that is about to happen, by looking at @@trancount. 
-                         */
-                        var serviceClient = new Service1Client("WSHttpBinding_IService1");
-                        serviceClient.DoWork(correlationId);
-
-                        WriteImportantBusinessDataToDatabase($"We never reach this location", GetTransactionDetails());
-
-                        transaction.Complete();
+                        Console.WriteLine("{0} trandetails is {1}, WE'RE ABOUT TO CREATE INCONSISTENT DATA", correlationId, transactionDetails);
                     }
+
+                    /*
+                     * This writes to two different tables.
+                     * - TestTable2 is written within the current transaction. When @@trancount is 0, the insert is NOT rolled back when the TransactionScope is rolled back.
+                     * - TestTable3 is written to, Suppressing the transaction. This is basically just a log.
+                     */
+                    WriteLogToDatabase(GetTransactionDetails());
+                    WriteImportantBusinessDataToDatabase($"This should not be committed ever, since the WCF call below always fails.", GetTransactionDetails());
+
+                    /*
+                     * This WCF call is transactional. The initial local transaction is promoted to a distributed transaction.
+                     * It always throws exception, and in 99.9% of the messages handled, the insert in the method above is rolled back.
+                     * But in some cases, the stuff is not rolled back. We can tell when that is about to happen, by looking at @@trancount. 
+                     */
+                    var serviceClient = new Service1Client("WSHttpBinding_IService1");
+                    serviceClient.DoWork(correlationId);
+
+                    WriteImportantBusinessDataToDatabase($"We never reach this location", GetTransactionDetails());
+
+                    transaction.Complete();
                 }
-                catch (Exception e)
+            }
+            catch (Exception e)
+            {
+                if (e.Message != "Dummy exception")
                 {
-                    if (e.Message == "Dummy exception")
-                    {
-                        Log.Debug("{CorrelationId:l} Expected exception. {Message}", correlationId, e.Message);
-                    }
-                    else
-                    {
-                        Log.Fatal(e, "{CorrelationId:l} {Message}", correlationId, e.Message);
-                    }
-                }
-                finally
-                {
-                    using (var transaction = new TransactionScope(TransactionScopeOption.Suppress))
-                    {
-                        Bus.SendLocal(new DoStuff() { Message = Guid.NewGuid().ToString() });
-                    }
+                    Console.WriteLine("{0} {1}", correlationId, e.Message);
                 }
             }
         }
-        
+
         private TransactionDetails GetTransactionDetails()
         {
             var transactionDetails = new TransactionDetails();
@@ -108,7 +102,6 @@ namespace DemoService.Handlers
 
             return transactionDetails;
         }
-
         private void WriteLogToDatabase(TransactionDetails transactionDetails)
         {
             // Making sure we always commit this one.
@@ -130,7 +123,6 @@ namespace DemoService.Handlers
                 }
             }
         }
-
         private void WriteImportantBusinessDataToDatabase(string message, TransactionDetails transactionDetails)
         {
             // This will be committed when "select @@trancount" is 0.
