@@ -29,10 +29,10 @@ namespace LoopHammer
             try
             {
                 /*
-                 * For legacy reasons, we want to handle the transaction ourselves.
+                 * Starting a new transaction scope
                  */
                 var transactionOptions = new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted };
-                using (var transaction = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
+                using (var transaction = new TransactionScope(TransactionScopeOption.Required, transactionOptions))
                 {
                     /*
                      * Since the above TransactionScope uses TransactionScopeOption.Required, we're in a new TransactionScope and @@trancount is 1 99.99% of the time
