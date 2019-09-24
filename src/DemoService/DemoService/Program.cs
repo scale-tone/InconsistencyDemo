@@ -1,21 +1,21 @@
 ﻿using System;
-using System.Configuration;
-using DemoService.Commands;
 using NServiceBus;
-using NServiceBus.Config;
 using NServiceBus.Features;
 using NServiceBus.Logging;
 using NServiceBus.Persistence;
 using NServiceBus.Serilog;
+using System.Configuration;
 
 namespace DemoService.Infrastructure
 {
-    class EndpointConfig : IConfigureThisEndpoint
+    public class Program
     {
-        public void Customize(BusConfiguration busConfiguration)
+        static void Main(string[] args)
         {
             LogConfig.ConfigureLogging();
             LogManager.Use<SerilogFactory>();
+
+            var busConfiguration = new BusConfiguration();
 
             busConfiguration.UseTransport<MsmqTransport>();
             busConfiguration.EndpointName(ConfigurationManager.AppSettings["DemoService.NServiceBus.InputQueue"]);
@@ -38,6 +38,10 @@ namespace DemoService.Infrastructure
                 var commands = t.Namespace != null && (t.Namespace.EndsWith("Commands"));
                 return commands;
             });
+
+            var startableBus = Bus.Create(busConfiguration);
+            var bus = startableBus.Start();
+            Console.ReadKey();
         }
     }
 }

@@ -47,7 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DemoService\DemoService.csproj">
-      <Project>{AE178AA2-46D7-4112-A8FD-273DC738F6F3}</Project>
+      <Project>{ae178aa2-46d7-4112-a8fd-273dc738f6f3}</Project>
       <Name>DemoService</Name>
     </ProjectReference>
   </ItemGroup>
