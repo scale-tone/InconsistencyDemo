@@ -50,6 +50,7 @@ namespace LoopHammer
                      * - TestTable2 is written within the current transaction. When @@trancount is 0, the insert is NOT rolled back when the TransactionScope is rolled back.
                      * - TestTable3 is written to, Suppressing the transaction. This is basically just a log.
                      */
+                    WriteLogToDatabase(GetTransactionDetails());
                     WriteImportantBusinessDataToDatabase($"This should not be committed ever, since the WCF call below always fails.", GetTransactionDetails());
 
                     /*
@@ -101,7 +102,27 @@ namespace LoopHammer
 
             return transactionDetails;
         }
+        private void WriteLogToDatabase(TransactionDetails transactionDetails)
+        {
+            // Making sure we always commit this one.
+            using (new TransactionScope(TransactionScopeOption.Suppress))
+            {
+                using (var connection = new SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["InconsistencyDemo"].ConnectionString))
+                {
+                    connection.Open();
+                    var query = @"INSERT INTO [dbo].[LogData] ([TranCount], [Xact] , [TranId], [CorrelationId]) VALUES (@trancount, @xact, @tranid, @correlationId)";
 
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@trancount", transactionDetails.TranCount);
+                        command.Parameters.AddWithValue("@xact", transactionDetails.XactState);
+                        command.Parameters.AddWithValue("@tranid", transactionDetails.TranId);
+                        command.Parameters.AddWithValue("@correlationId", correlationId);
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+        }
         private void WriteImportantBusinessDataToDatabase(string message, TransactionDetails transactionDetails)
         {
             // This will be committed when "select @@trancount" is 0.
