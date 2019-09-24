@@ -25,11 +25,11 @@ Run the `Runme.ps1` in the root of the repository. This will
 
 Once both applications are running, you can verify that the LoopService is working. It only takes a few minutes for inconsistencies to appear on my developer machine. When the `Trancount` property is 0 we cannot roll back crud operations.
 
-![Console applications running](https://raw.githubusercontent.com/samegutt/InconsistencyDemo/master/doc/Inconsistency.console2.png)
+![Console applications running](https://raw.githubusercontent.com/samegutt/InconsistencyDemo/withoutnsb/doc/Inconsistency.console2.png)
 
 Verify using SQL:
 
-![Transaction is not rolled back](https://raw.githubusercontent.com/samegutt/InconsistencyDemo/master/doc/Inconsistency.ssms2.png)
+![Transaction is not rolled back](https://raw.githubusercontent.com/samegutt/InconsistencyDemo/withoutnsb/doc/Inconsistency.ssms2.png)
 
 
 We have not been able to reproduce without the transactional WCF call. In this example we also instruct NServiceBus to NOT to create a transaction. 
