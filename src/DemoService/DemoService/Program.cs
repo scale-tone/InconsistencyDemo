@@ -15,32 +15,37 @@ namespace DemoService.Infrastructure
             LogConfig.ConfigureLogging();
             LogManager.Use<SerilogFactory>();
 
-            var busConfiguration = new BusConfiguration();
+            var endpointName = ConfigurationManager.AppSettings["DemoService.NServiceBus.InputQueue"];
+            var endpointConfiguration = new EndpointConfiguration(endpointName);
 
-            busConfiguration.UseTransport<MsmqTransport>();
-            busConfiguration.EndpointName(ConfigurationManager.AppSettings["DemoService.NServiceBus.InputQueue"]);
+            endpointConfiguration.UseTransport<MsmqTransport>();
+            endpointConfiguration.SendFailedMessagesTo($"{endpointName}.error");
+
+            //endpointConfiguration.LimitMessageProcessingConcurrencyTo(int.Parse(ConfigurationManager.AppSettings["DemoService.NServiceBus.MaximumConcurrencyLevel"]));
 
             // Make sure the queues are created.
-            busConfiguration.EnableInstallers();
+            endpointConfiguration.EnableInstallers();
 
-            busConfiguration.UsePersistence<InMemoryPersistence, StorageType.Subscriptions>();
-            busConfiguration.DisableFeature<Sagas>();
-            busConfiguration.DisableFeature<Audit>();
-            busConfiguration.DisableFeature<TimeoutManager>();
-            busConfiguration.DisableFeature<SecondLevelRetries>();
+            endpointConfiguration.UsePersistence<InMemoryPersistence, StorageType.Subscriptions>();
+            endpointConfiguration.DisableFeature<Sagas>();
+            endpointConfiguration.DisableFeature<Audit>();
+            endpointConfiguration.DisableFeature<TimeoutManager>();
 
-            //busConfiguration.DiscardFailedMessagesInsteadOfSendingToErrorQueue();
-            var transactionSettings = busConfiguration.Transactions();
-            transactionSettings.Disable();
+            var recoverability = endpointConfiguration.Recoverability();
+            recoverability.Immediate(
+                customizations: immediate =>
+                {
+                    immediate.NumberOfRetries(0);
+                });
 
-            busConfiguration.Conventions().DefiningCommandsAs(t =>
+            endpointConfiguration.Conventions().DefiningCommandsAs(t =>
             {
                 var commands = t.Namespace != null && (t.Namespace.EndsWith("Commands"));
                 return commands;
             });
 
-            var startableBus = Bus.Create(busConfiguration);
-            var bus = startableBus.Start();
+            var endpointInstance = Endpoint.Start(endpointConfiguration);
+            Console.WriteLine("Press any key to exit");
             Console.ReadKey();
         }
     }

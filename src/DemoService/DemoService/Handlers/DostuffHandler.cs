@@ -5,6 +5,7 @@ using Serilog;
 using Serilog.Context;
 using System;
 using System.Data.SqlClient;
+using System.Threading.Tasks;
 using System.Transactions;
 
 namespace DemoService.Handlers
@@ -12,9 +13,8 @@ namespace DemoService.Handlers
     public class DostuffHandler: IHandleMessages<DoStuff>
     {
         private string correlationId;
-        public IBus Bus { get; set; }
-
-        public void Handle(DoStuff message)
+ 
+        public Task Handle(DoStuff message, IMessageHandlerContext context)
         {
             correlationId = message.Message;
             using (LogContext.PushProperty("TransactionInformation", Transaction.Current?.TransactionInformation, true))
@@ -25,7 +25,7 @@ namespace DemoService.Handlers
                      * For legacy reasons, we want to handle the transaction ourselves.
                      */
                     var transactionOptions = new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted };
-                    using (var transaction = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
+                    using (var transaction = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                     {
                         /*
                          * Since the above TransactionScope uses TransactionScopeOption.Required, we're in a new TransactionScope and @@trancount is 1 99.99% of the time
@@ -73,11 +73,10 @@ namespace DemoService.Handlers
                 }
                 finally
                 {
-                    using (var transaction = new TransactionScope(TransactionScopeOption.Suppress))
-                    {
-                        Bus.SendLocal(new DoStuff() { Message = Guid.NewGuid().ToString() });
-                    }
+                    context.SendLocal(new DoStuff() { Message = Guid.NewGuid().ToString() })
+                        .ConfigureAwait(false);
                 }
+                return Task.CompletedTask;
             }
         }
         
